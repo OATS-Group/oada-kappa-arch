@@ -1,18 +1,9 @@
 'use strict';
 
 let kafka = require('kafka-node');
-let avro = require('avsc');
 let sqlite3 = require('sqlite3').verbose();
 let Promise = require('bluebird');
-let isobus_msg_type = avro.parse({
-	name: 'isobusmsg',
-	type: 'record',
-	fields: [
-		{ name: 'timestamp', type: 'long' },
-		{ name: 'pgn', type: 'int' },
-		{ name: 'data', type: 'bytes' }
-	]
-});
+let raw_isobus = require('./avro-types').raw_isobus;
 
 let db = Promise.promisifyAll(new sqlite3.Database('../aarons_combine.sqlite3'));
 
@@ -25,14 +16,14 @@ producer.on('ready', function() {
 		.each(function(row, count, total) {
 //			console.log('Sending %d of %d', count+1, total);
 
-			let buf = isobus_msg_type.toBuffer({
+			let buf = raw_isobus.toBuffer({
 					timestamp: row.time,
 					pgn: row.pgn,
 					data: row.data
 			});
 
 			let payloads = [{
-				topic: 'isobus-msg8',
+				topic: 'raw-isobus',
 				messages: buf,
 				//key: 'candroid-0',
 				//partition: 0

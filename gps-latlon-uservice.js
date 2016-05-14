@@ -3,9 +3,9 @@
 let fs = require('fs');
 
 let kafka = require('kafka-node');
-let avro = require('avsc');
 let Promise = require('bluebird');
 let Parser = require('binary-parser').Parser;
+let raw_isobus = require('./avro-types').raw_isobus;
 
 // Create Kafka consumer
 let HighLevelConsumer = kafka.HighLevelConsumer;
@@ -13,28 +13,18 @@ let client = new kafka.Client('vip1.ecn.purdue.edu:2181/');
 let consumer = new HighLevelConsumer(
 		client,
 		[
-			{ topic: 'isobus-msg8' }
+			{ topic: 'raw-isobus' }
 		],
 		{
 			encoding: 'buffer'
 		}
 );
 
-// define ISOBUS Avro type
-let isobus_msg_type = avro.parse({
-	name: 'isobusmsg',
-	type: 'record',
-	fields: [
-		{ name: 'timestamp', type: 'long' },
-		{ name: 'pgn', type: 'int' },
-		{ name: 'data', type: 'bytes' }
-	]
-});
-
+// variables for reconstructing fast packets
 let fastpacket_frame_count = 0;
-let fastpacket_data = [];
 let fastpacket_datasize;
 let expected_sequence_id;
+let fastpacket_data = [];
 let gps_latlon = [];
 
 /**************************************************************
@@ -43,7 +33,7 @@ let gps_latlon = [];
  * together.
  *************************************************************/
 
-let pgn_129029 = new Parser()
+let gps_fp = new Parser()
 		.skip(7)
 		.uint32le('latlb', {
 			formatter: (state) => {
@@ -67,7 +57,7 @@ let pgn_129029 = new Parser()
 		});
 
 // reconstruct fast packets
-function parse_gps(val) {
+function reconstruct_fp(val) {
 	if (val.pgn === 129029) {
 		if (val.data[0] % 32 === 0 && fastpacket_frame_count === 0) {
 			fastpacket_frame_count = 1;
@@ -99,36 +89,18 @@ function parse_gps(val) {
 	}
 }
 
-// consumer.addTopics([{ topic: 'isobus-msg8', offset: 0}], function(err, added) {}, true);
-
-
 consumer.on('message', function(message) {
-	let val = isobus_msg_type.fromBuffer(message.value);
-	let gps_data_payloads = parse_gps(val);
+	let msg_buffer = raw_isobus.fromBuffer(message.value);
+	let fp_payloads = reconstruct_fp(msg_buffer);
 
-	if (gps_data_payloads != null) {
-		/*
-		console.log('lat bytes:',
-								gps_data_payloads[7], gps_data_payloads[8],
-								gps_data_payloads[9], gps_data_payloads[10],
-								gps_data_payloads[11], gps_data_payloads[12],
-								gps_data_payloads[13], gps_data_payloads[14]);
-		console.log('loni bytes:',
-								gps_data_payloads[15], gps_data_payloads[16],
-								gps_data_payloads[17], gps_data_payloads[18],
-								gps_data_payloads[19], gps_data_payloads[20],
-								gps_data_payloads[21], gps_data_payloads[22]);
-		*/
-		// console.log(pgn_129029.parse(new Buffer(gps_data_payloads, 'hex')));
-		let parsed_gps_data = pgn_129029.parse(new Buffer(gps_data_payloads, 'hex'));
-		parsed_gps_data.lat = (parsed_gps_data.latlb + parsed_gps_data.lathb) * 1e-16;
-		parsed_gps_data.lon = (parsed_gps_data.lonlb + parsed_gps_data.lonhb) * 1e-16;
-		parsed_gps_data.ts = parseInt(val.timestamp);
+	if (fp_payloads != null) {
+		let data = gps_fp.parse(new Buffer(fp_payloads, 'hex'));
+		data.lat = (data.latlb + data.lathb) * 1e-16;
+		data.lon = (data.lonlb + data.lonhb) * 1e-16;
+		data.ts = parseInt(msg_buffer.timestamp);
 
-		gps_latlon.push(parsed_gps_data);
-		console.log('ts:', parsed_gps_data.ts,
-								'lat:', parsed_gps_data.lat,
-								'lon:', parsed_gps_data.lon);
+		gps_latlon.push(data);
+		console.log('ts:', data.ts, 'lat:', data.lat, 'lon:', data.lon);
 	}
 });
 
