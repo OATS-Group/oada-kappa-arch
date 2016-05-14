@@ -3,7 +3,7 @@
 let kafka = require('kafka-node');
 let sqlite3 = require('sqlite3').verbose();
 let Promise = require('bluebird');
-let raw_isobus = require('./avro-types').raw_isobus;
+let raw_isobus_type = require('./avro-types').raw_isobus_type;
 
 let db = Promise.promisifyAll(new sqlite3.Database('../aarons_combine.sqlite3'));
 
@@ -16,7 +16,7 @@ producer.on('ready', function() {
 		.each(function(row, count, total) {
 //			console.log('Sending %d of %d', count+1, total);
 
-			let buf = raw_isobus.toBuffer({
+			let buf = raw_isobus_type.toBuffer({
 					timestamp: row.time,
 					pgn: row.pgn,
 					data: row.data
