@@ -15,11 +15,12 @@ let cons_client = new kafka.Client('vip1.ecn.purdue.edu:2181');
 let consumer = new Consumer(
 		cons_client,
 		[
-			{ topic: 'raw-isobus-888' }
+			{ topic: 'raw-isobus' }
 		],
 		{
 			encoding: 'buffer',
-			autoCommit: true
+			autoCommit: true,
+			autoCommitIntervalMs: 5000
 		}
 );
 
@@ -31,7 +32,10 @@ let producer = Promise.promisifyAll(new Producer(prod_client));
 // Create work promise/queue
 let work = Promise.resolve();
 
-// Listen on topic
+/* 
+   Listen on topic
+   and have the producer to send it
+*/
 producer.on('ready', function() {
 	consumer.on('message', function(message) {
 		// process the message
@@ -55,6 +59,7 @@ producer.on('ready', function() {
 			console.log('ts:', rx_buf.timestamp, 'fuel rate:', data.fuel_rate_lhr);
 		}
 
+		// send the message in order
 		if (payloads) {
 			work = work.then(() => {
 				return producer.sendAsync(payloads);

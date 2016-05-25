@@ -12,25 +12,37 @@ let pgns = require('./pgns');
 let raw_isobus_type = type.raw_isobus_type;
 let gps_latlon_type = type.gps_latlon_type;
 
-// Create Kafka consumer
-let HighLevelConsumer = kafka.HighLevelConsumer;
-let client = new kafka.Client('vip1.ecn.purdue.edu:2181/');
-let consumer = new HighLevelConsumer(
-		client,
+// Creat Kafka consumer
+let Consumer = kafka.Consumer;
+let cons_client = new kafka.Client('vip1.ecn.purdue.edu:2181');
+let consumer = new Consumer(
+		cons_client,
 		[
-			{ topic: 'raw-isobus' }
+			{
+				topic: 'raw-isobus',
+			}
 		],
 		{
-			encoding: 'buffer'
+			encoding: 'buffer',
+			autoCommit: true,
+			autoCommitIntervalMs: 5000
 		}
 );
+
+// Create Kafka producer
+let Producer = kafka.Producer;
+let prod_client = new kafka.Client('vip1.ecn.purdue.edu:2181');
+let producer = Promise.promisifyAll(new Producer(prod_client));
+
+// Create work promise/queue
+let work = Promise.resolve();
 
 // variables for reconstructing fast packets
 let fastpacket_frame_count = 0;
 let fastpacket_datasize;
-let expected_sequence_id;
-let fp_payloads;
+let fastpacket_payloads;
 let fastpacket_data = [];
+let expected_sequence_id;
 let gps_latlon = [];
 
 // reconstruct fast packets
@@ -64,25 +76,59 @@ function reconstruct_fp(val) {
 	}
 }
 
-consumer.on('message', function(message) {
-	let msg_buffer = raw_isobus_type.fromBuffer(message.value);
-	let p = pgns[msg_buffer.pgn];
-	if (p && msg_buffer.pgn === 129029) {
-		fp_payloads = reconstruct_fp(msg_buffer);
-		if (fp_payloads) {
-			let data = p.parse(new Buffer(fp_payloads, 'hex'));
-			data.lat = (data.latlb + data.lathb) * 1e-16;
-			data.lon = (data.lonlb + data.lonhb) * 1e-16;
-			data.ts = parseInt(msg_buffer.timestamp);
+/*
+   Listen on topic
+   and have the producer to send it
+*/
+producer.on('ready', function() {
+	consumer.on('message', function(message) {
+		// process the message
+		let rx_buf = raw_isobus_type.fromBuffer(message.value);
+		let p = pgns[rx_buf.pgn];
+		let data;
+		let payloads;
+		if (p && rx_buf.pgn === 129029) {
+			fastpacket_payloads = reconstruct_fp(rx_buf);
+			if (fastpacket_payloads) {
+				data = p.parse(new Buffer(fastpacket_payloads, 'hex'));
 
-			gps_latlon.push(data);
-			console.log('ts:', data.ts, 'lat:', data.lat, 'lon:', data.lon);
+				let tx_buf = gps_latlon_type.toBuffer({
+						timestamp: rx_buf.timestamp,
+						lat: (data.latlb + data.lathb) * 1e-16,
+						lon: (data.lonlb + data.lonhb) * 1e-16
+				});
+
+				payloads = [{
+						topic: 'gps-latlon',
+						messages: tx_buf
+				}];
+
+				console.log('ts:', rx_buf.timestamp, 'lat:', (data.latlb + data.lathb) * 1e-16,
+										'lon:', (data.lonlb + data.lonhb) * 1e-16);
+			}
 		}
-	}
+
+		// send the message in order
+		if (payloads) {
+			work = work.then(() => {
+				return producer.sendAsync(payloads);
+			})
+			.catch(function(err) {
+				console.error(err);
+				process.exit();
+			});
+		}
+	});
+});
+
+producer.on('error', function(err) {
+	console.error(err);
+	process.exit();
 });
 
 process.on('exit', function() {
-	client.close();
+	cons_client.close();
+	prod_client.close();
+	consumer.commit();
 	consumer.close();
-	// fs.writeFileSync('data.json', JSON.stringify(gps_latlon, undefined, 2));
 });

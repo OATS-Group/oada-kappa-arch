@@ -13,8 +13,15 @@ let producer = Promise.promisifyAll(new HighLevelProducer(client));
 
 producer.on('ready', function() {
 	db.allAsync('SELECT time, pgn, data FROM isobus_messages')
+		/*
+		.tap((rows) => {
+			console.log(rows[rows.length-1].time - rows[0].time);
+			process.exit();
+		})
+		*/
 		.each(function(row, count, total) {
-//			console.log('Sending %d of %d', count+1, total);
+			// console.log('%d', row.time);
+			// console.log('Sending %d of %d', count+1, total);
 
 			let buf = raw_isobus_type.toBuffer({
 					timestamp: row.time,
