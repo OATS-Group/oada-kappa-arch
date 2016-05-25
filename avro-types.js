@@ -22,5 +22,15 @@ let gps_latlon_type = avro.parse({
 	]
 });
 
+let fuel_rate_type = avro.parse({
+	name: 'fuelrate',
+	type: 'record',
+	fields: [
+		{ name: 'timestamp', type: 'long' },
+		{ name: 'fuelrate', type: 'float' }
+	]
+});
+
 exports.raw_isobus_type = raw_isobus_type;
 exports.gps_latlon_type = gps_latlon_type;
+exports.fuel_rate_type = fuel_rate_type;
