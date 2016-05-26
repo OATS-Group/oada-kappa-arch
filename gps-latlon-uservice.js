@@ -20,10 +20,12 @@ let consumer = new Consumer(
 		[
 			{
 				topic: 'raw-isobus',
+				offset: 0
 			}
 		],
 		{
 			encoding: 'buffer',
+			fromOffset: true,
 			autoCommit: true,
 			autoCommitIntervalMs: 5000
 		}
