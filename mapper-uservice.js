@@ -131,7 +131,7 @@ function gps_matcher() {
 				process.exit();
 			});
 		}
-		
+
 		gps_msg_buf = gps_msg_buf.slice(closest_gps_index);
 
 		return true;

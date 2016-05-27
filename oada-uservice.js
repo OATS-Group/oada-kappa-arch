@@ -30,7 +30,7 @@ function oada_pusher() {
 	let old_gps_lat = fr_map_msg_buf[0].lat;
 	let old_gps_lon = fr_map_msg_buf[0].lon;
 	let index = fr_map_msg_buf.findIndex((fr_map_msg) => ((fr_map_msg.lat !== old_gps_lat)
-																				&& (fr_map_msg.lon !== old_gps_lon)));
+																				|| (fr_map_msg.lon !== old_gps_lon)));
 	if (index > 0) {
 		let new_fr_map_msg = fr_map_msg_buf.slice(0, index - 1);
 		let oada_gps_lat = fr_map_msg_buf[index - 1].lat;
@@ -42,7 +42,7 @@ function oada_pusher() {
 			sum_fr += new_fr_map_msg[i].fuelrate;
 		}
 		let avg_fr = sum_fr / new_fr_map_msg.length;
-		
+
 		fr_map_msg_buf = fr_map_msg_buf.slice(index);
 		console.log('%d,%d,%d', oada_gps_lat, oada_gps_lon, avg_fr);
 	}
