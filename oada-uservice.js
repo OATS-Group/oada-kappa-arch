@@ -1,8 +1,11 @@
 'use strict';
 
+let rp = require('request-promise');
+let geohash = require('ngeohash');
 let kafka = require('kafka-node');
 let types = require('./avro-types');
 
+// Get Avro data type
 let fr_map_type = types.fr_map_type;
 
 // Creat fr-map message consumer
@@ -24,6 +27,26 @@ let cons_consumer = new Consumer(
 		}
 );
 
+// Create headers for HTTP request
+let headers = {
+	'Content-Type': 'application/json',
+	'Authorization': 'Bearer CXURd_VrRJSn1m-0cNyiqKxq7xintCBCx6Zu7Mwf'
+};
+
+let data_payloads = {};
+let res_uri = 'https://vip4.ecn.purdue.edu:3000/bookmarks/geohash-7/';
+
+// Create options for HTTP request
+let options = {
+	uri: res_uri,
+	method: 'POST',
+	headers: headers,
+	body: {
+		data: data_payloads,
+	},
+	json: true
+};
+
 let fr_map_msg_buf = [];
 
 function oada_pusher() {
@@ -35,8 +58,6 @@ function oada_pusher() {
 		let new_fr_map_msg = fr_map_msg_buf.slice(0, index - 1);
 		let oada_gps_lat = fr_map_msg_buf[index - 1].lat;
 		let oada_gps_lon = fr_map_msg_buf[index - 1].lon;
-//		console.log('new length:', new_fr_map_msg.length);
-//		new_fr_map_msg.forEach((msg) => console.log(msg.timestamp, msg.lat, msg.lon, msg.fuelrate));
 		let sum_fr = 0;
 		for (let i = 0; i < new_fr_map_msg.length; i++) {
 			sum_fr += new_fr_map_msg[i].fuelrate;
@@ -45,12 +66,30 @@ function oada_pusher() {
 
 		fr_map_msg_buf = fr_map_msg_buf.slice(index);
 		console.log('%d,%d,%d', oada_gps_lat, oada_gps_lon, avg_fr);
+
+		let gh = geohash.encode(oada_gps_lat, oada_gps_lon);
+
+		options.uri = res_uri + gh;
+
+		data_payloads.lat = oada_gps_lat;
+		data_payloads.lon = oada_gps_lon;
+		data_payloads.fr = avg_fr;
+
+		if (data_payloads) {
+			return rp(options)
+				.then(function(parsedBody) {
+					console.log('POST succeeded');
+				})
+				.catch(function(err) {
+					console.error(err);
+				});
+		}
 	}
 }
 
 cons_consumer.on('message', function(message) {
 	let fr_map_buf = fr_map_type.fromBuffer(message.value);
-//	console.log(fr_map_buf.timestamp, fr_map_buf.lat, fr_map_buf.lon, fr_map_buf.fuelrate);
 	fr_map_msg_buf.push(fr_map_buf);
 	oada_pusher();
+
 });
