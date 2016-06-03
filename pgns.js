@@ -73,5 +73,12 @@ module.exports = {
 			formatter: (state) => {
 				return (state * Math.pow(2, 32));
 			}
+		}),
+
+	'65488': new Parser()
+		.uint32le('yield', {
+			formatter: (state) => {
+				return (state * .0000189545096358038);
+			}
 		})
 }

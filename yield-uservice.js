@@ -7,7 +7,7 @@ let type = require('./avro-types');
 let pgns = require('./pgns');
 
 let raw_isobus_type = type.raw_isobus_type;
-let fuel_rate_type = type.fuel_rate_type;
+let yield_type = type.yield_type;
 
 // Creat Kafka consumer
 let Consumer = kafka.Consumer;
@@ -47,20 +47,20 @@ producer.on('ready', function() {
 		let p = pgns[rx_buf.pgn];
 		let data;
 		let payloads;
-		if (p && rx_buf.pgn === 65266) {
+		if (p && rx_buf.pgn === 65488) {
 			data = p.parse(new Buffer(rx_buf.data, 'hex'));
 
-			let tx_buf = fuel_rate_type.toBuffer({
+			let tx_buf = yield_type.toBuffer({
 				timestamp: rx_buf.timestamp,
-				fuelrate: data.fuel_rate_lhr
+				yield: data.yield
 			});
 
 			payloads = [{
-				topic: 'fuel-rate',
+				topic: 'yield',
 				messages: tx_buf
 			}];
 
-			console.log('ts:', rx_buf.timestamp, 'fuel rate:', data.fuel_rate_lhr);
+			console.log('ts:', rx_buf.timestamp, 'yield:', data.yield);
 		}
 
 		// send the message in order

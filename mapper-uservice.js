@@ -106,8 +106,10 @@ function gps_matcher() {
 		/*
 		console.log('closest gps index: %d of length %d', closest_gps_index, gps_msg_buf.length);
 		console.log('fr ts:', fr_msg.timestamp, 'gps ts:', gps_msg_buf[closest_gps_index].timestamp);
-		*/
 		console.log(gps_msg_buf[closest_gps_index].timestamp, gps_msg_buf[closest_gps_index].lat,
+								gps_msg_buf[closest_gps_index].lon, fr_msg.fuelrate)
+		*/
+		console.log(gps_msg_buf[closest_gps_index].lat,
 								gps_msg_buf[closest_gps_index].lon, fr_msg.fuelrate)
 		let tx_buf = fr_map_type.toBuffer({
 				timestamp: gps_msg_buf[closest_gps_index].timestamp,
@@ -117,7 +119,7 @@ function gps_matcher() {
 		});
 
 		let payloads = [{
-				topic: 'fr-map',
+				topic: 'map',
 				messages: tx_buf
 		}];
 

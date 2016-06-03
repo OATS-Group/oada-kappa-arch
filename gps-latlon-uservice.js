@@ -104,9 +104,9 @@ producer.on('ready', function() {
 						topic: 'gps-latlon',
 						messages: tx_buf
 				}];
-
 				console.log('ts:', rx_buf.timestamp, 'lat:', (data.latlb + data.lathb) * 1e-16,
 										'lon:', (data.lonlb + data.lonhb) * 1e-16);
+//				console.log((data.latlb + data.lathb) * 1e-16, (data.lonlb + data.lonhb) * 1e-16);
 			}
 		}
 

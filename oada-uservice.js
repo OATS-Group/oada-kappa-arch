@@ -10,12 +10,12 @@ let fr_map_type = types.fr_map_type;
 
 // Creat fr-map message consumer
 let Consumer = kafka.Consumer;
-let cons_client = new kafka.Client('vip1.ecn.purdue.edu:2181');
+let cons_client = new kafka.Client('vip4.ecn.purdue.edu:2181');
 let cons_consumer = new Consumer(
 		cons_client,
 		[
 			{
-				topic: 'fr-map',
+				topic: 'map',
 				offset: 0
 			}
 		],
@@ -67,7 +67,7 @@ function oada_pusher() {
 		fr_map_msg_buf = fr_map_msg_buf.slice(index);
 		console.log('%d,%d,%d', oada_gps_lat, oada_gps_lon, avg_fr);
 
-		let gh = geohash.encode(oada_gps_lat, oada_gps_lon);
+		let gh = geohash.encode(oada_gps_lat, oada_gps_lon, 10);
 
 		options.uri = res_uri + gh;
 
@@ -84,6 +84,7 @@ function oada_pusher() {
 					console.error(err);
 				});
 		}
+
 	}
 }
 

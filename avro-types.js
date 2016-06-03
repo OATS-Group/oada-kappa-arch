@@ -31,6 +31,15 @@ let fuel_rate_type = avro.parse({
 	]
 });
 
+let yield_type = avro.parse({
+	name: 'yield',
+	type: 'record',
+	fields: [
+		{ name: 'timestamp', type: 'long' },
+		{ name: 'yield', type: 'float' }
+	]
+});
+
 let fr_map_type = avro.parse({
 	name: 'frmap',
 	type: 'record',
@@ -46,3 +55,4 @@ exports.raw_isobus_type = raw_isobus_type;
 exports.gps_latlon_type = gps_latlon_type;
 exports.fuel_rate_type = fuel_rate_type;
 exports.fr_map_type = fr_map_type;
+exports.yield_type = yield_type;

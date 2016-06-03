@@ -5,7 +5,7 @@ let sqlite3 = require('sqlite3').verbose();
 let Promise = require('bluebird');
 let raw_isobus_type = require('./avro-types').raw_isobus_type;
 
-let db = Promise.promisifyAll(new sqlite3.Database('../aarons_combine.sqlite3'));
+let db = Promise.promisifyAll(new sqlite3.Database('../isobus_messages-yield-un.db'));
 
 let HighLevelProducer = kafka.HighLevelProducer;
 let client = new kafka.Client('vip1.ecn.purdue.edu:2181/');
