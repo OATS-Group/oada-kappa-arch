@@ -6,7 +6,7 @@ let raw_isobus_type = avro.parse({
 	name: 'rawisobus',
 	type: 'record',
 	fields: [
-		{ name: 'timestamp', type: 'long' },
+		{ name: 'timestamp', type: 'double' },
 		{ name: 'pgn', type: 'int' },
 		{ name: 'data', type: 'bytes' }
 	]
@@ -16,7 +16,7 @@ let gps_latlon_type = avro.parse({
 	name: 'gpslatlon',
 	type: 'record',
 	fields: [
-		{ name: 'timestamp', type: 'long' },
+		{ name: 'timestamp', type: 'double' },
 		{ name: 'lat', type: 'float' },
 		{ name: 'lon', type: 'float' }
 	]
@@ -26,7 +26,7 @@ let fuel_rate_type = avro.parse({
 	name: 'fuelrate',
 	type: 'record',
 	fields: [
-		{ name: 'timestamp', type: 'long' },
+		{ name: 'timestamp', type: 'double' },
 		{ name: 'fuelrate', type: 'float' }
 	]
 });
@@ -35,7 +35,7 @@ let yield_type = avro.parse({
 	name: 'yield',
 	type: 'record',
 	fields: [
-		{ name: 'timestamp', type: 'long' },
+		{ name: 'timestamp', type: 'double' },
 		{ name: 'yield', type: 'float' }
 	]
 });
@@ -44,7 +44,7 @@ let fr_map_type = avro.parse({
 	name: 'frmap',
 	type: 'record',
 	fields: [
-		{ name: 'timestamp', type: 'long' },
+		{ name: 'timestamp', type: 'double' },
 		{ name: 'lat', type: 'float' },
 		{ name: 'lon', type: 'float' },
 		{ name: 'fuelrate', type: 'float' }

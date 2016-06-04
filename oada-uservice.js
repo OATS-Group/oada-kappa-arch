@@ -2,6 +2,7 @@
 
 let rp = require('request-promise');
 let geohash = require('ngeohash');
+let colors = require('colors');
 let kafka = require('kafka-node');
 let types = require('./avro-types');
 
@@ -34,16 +35,13 @@ let headers = {
 };
 
 let data_payloads = {};
-let res_uri = 'https://vip4.ecn.purdue.edu:3000/bookmarks/geohash-7/';
+let res_uri = 'https://vip4.ecn.purdue.edu:3000/bookmarks/harvest/map/geohash-7/';
 
 // Create options for HTTP request
 let options = {
 	uri: res_uri,
 	method: 'POST',
 	headers: headers,
-	body: {
-		data: data_payloads,
-	},
 	json: true
 };
 
@@ -56,8 +54,8 @@ function oada_pusher() {
 																				|| (fr_map_msg.lon !== old_gps_lon)));
 	if (index > 0) {
 		let new_fr_map_msg = fr_map_msg_buf.slice(0, index - 1);
-		let oada_gps_lat = fr_map_msg_buf[index - 1].lat;
-		let oada_gps_lon = fr_map_msg_buf[index - 1].lon;
+		let lat = fr_map_msg_buf[index - 1].lat;
+		let lon = fr_map_msg_buf[index - 1].lon;
 		let sum_fr = 0;
 		for (let i = 0; i < new_fr_map_msg.length; i++) {
 			sum_fr += new_fr_map_msg[i].fuelrate;
@@ -65,20 +63,21 @@ function oada_pusher() {
 		let avg_fr = sum_fr / new_fr_map_msg.length;
 
 		fr_map_msg_buf = fr_map_msg_buf.slice(index);
-		console.log('%d,%d,%d', oada_gps_lat, oada_gps_lon, avg_fr);
+		console.log('%d,%d,%d', lat, lon, avg_fr);
 
-		let gh = geohash.encode(oada_gps_lat, oada_gps_lon, 10);
+		let gh = geohash.encode(lat, lon, 7);
 
-		options.uri = res_uri + gh;
+		options.uri = res_uri + gh + '/data';
 
-		data_payloads.lat = oada_gps_lat;
-		data_payloads.lon = oada_gps_lon;
-		data_payloads.fr = avg_fr;
+		options.body = {
+			lat,
+			lon,
+			avg_fr
+		};
 
 		if (data_payloads) {
 			return rp(options)
 				.then(function(parsedBody) {
-					console.log('POST succeeded');
 				})
 				.catch(function(err) {
 					console.error(err);

@@ -12,6 +12,7 @@
     "avsc": "^4.1.0",
     "binary-parser": "^1.1.5",
     "bluebird": "^3.3.5",
+    "colors": "^1.1.2",
     "kafka-node": "^0.3.2",
     "request-promise": "^3.0.0",
     "sqlite3": "^3.1.3"
